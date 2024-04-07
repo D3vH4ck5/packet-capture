@@ -5,35 +5,33 @@
 #include <sys/types.h>
 
 
-/* Ethernet header */
 struct ethheader {
-  unsigned char  ether_dhost[6]; /* destination host address */
-  unsigned char  ether_shost[6]; /* source host address */
-  unsigned short ether_type;     /* protocol type (IP, ARP, RARP, etc) */
+  unsigned char  ether_dhost[6];
+  unsigned char  ether_shost[6];
+  unsigned short ether_type;
 };
 
-/* IP Header */
 struct ipheader {
-  unsigned char      iph_ihl:4, //IP header length
-                     iph_ver:4; //IP version
-  unsigned char      iph_tos; //Type of service
-  unsigned short int iph_len; //IP Packet length (data + header)
-  unsigned short int iph_ident; //Identification
-  unsigned short int iph_flag:3, //Fragmentation flags
-                     iph_offset:13; //Flags offset
-  unsigned char      iph_ttl; //Time to Live
-  unsigned char      iph_protocol; //Protocol type
-  unsigned short int iph_chksum; //IP datagram checksum
-  struct  in_addr    iph_sourceip; //Source IP address
-  struct  in_addr    iph_destip;   //Destination IP address
+  unsigned char      iph_ihl:4,
+                     iph_ver:4;
+  unsigned char      iph_tos;
+  unsigned short int iph_len;
+  unsigned short int iph_ident;
+  unsigned short int iph_flag:3,
+                     iph_offset:13;
+  unsigned char      iph_ttl;
+  unsigned char      iph_protocol;
+  unsigned short int iph_chksum;
+  struct  in_addr    iph_sourceip;
+  struct  in_addr    iph_destip;
 };
 
 struct tcpheader {
-    unsigned short tcp_sport;               /* source port */
-    unsigned short tcp_dport;               /* destination port */
-    unsigned int   tcp_seq;                 /* sequence number */
-    unsigned int   tcp_ack;                 /* acknowledgement number */
-    unsigned char  tcp_offx2;               /* data offset, rsvd */
+    unsigned short tcp_sport;
+    unsigned short tcp_dport;
+    unsigned int   tcp_seq;
+    unsigned int   tcp_ack;
+    unsigned char  tcp_offx2;
 #define TH_OFF(th)      (((th)->tcp_offx2 & 0xf0) >> 4)
     unsigned char  tcp_flags;
 #define TH_FIN  0x01
@@ -45,9 +43,9 @@ struct tcpheader {
 #define TH_ECE  0x40
 #define TH_CWR  0x80
 #define TH_FLAGS        (TH_FIN|TH_SYN|TH_RST|TH_ACK|TH_URG|TH_ECE|TH_CWR)
-    unsigned short tcp_win;                 /* window */
-    unsigned short tcp_sum;                 /* checksum */
-    unsigned short tcp_urp;                 /* urgent pointer */
+    unsigned short tcp_win;
+    unsigned short tcp_sum;
+    unsigned short tcp_urp;
 };
 
 void got_packet(u_char *args, const struct pcap_pkthdr *header,
@@ -55,7 +53,7 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header,
 {
   struct ethheader *eth = (struct ethheader *)packet;
 
-  if (ntohs(eth->ether_type) == 0x0800) { // 0x0800 is IP type
+  if (ntohs(eth->ether_type) == 0x0800) {
     struct ipheader *ip = (struct ipheader *)(packet + sizeof(struct ethheader));
     printf("=============== Packet Info ===============\n\n");
     printf("Ethernet\n");
@@ -65,22 +63,6 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header,
     printf("IP Address\n");
     printf("        Src: %s\n", inet_ntoa(ip->iph_sourceip));   
     printf("        Dst: %s\n", inet_ntoa(ip->iph_destip));    
-
-    /* determine protocol */
-    // switch(ip->iph_protocol) {                                 
-    //     case IPPROTO_TCP:
-    //         printf("   Protocol: TCP\n");
-    //         break;
-    //     case IPPROTO_UDP:
-    //         printf("   Protocol: UDP\n");
-    //         break;
-    //     case IPPROTO_ICMP:
-    //         printf("   Protocol: ICMP\n");
-    //         break;
-    //     default:
-    //         printf("   Protocol: others\n");
-    //         break;
-    // }
 
     struct tcpheader *tcp = (struct tcpheader *)(packet + sizeof(struct ethheader)+ sizeof(struct ipheader));
 
@@ -107,20 +89,17 @@ int main()
   char filter_exp[] = "tcp";
   bpf_u_int32 net;
 
-  // Step 1: Open live pcap session on NIC with name enp0s3
   handle = pcap_open_live("ens18", BUFSIZ, 1, 1000, errbuf);
 
-  // Step 2: Compile filter_exp into BPF psuedo-code
   pcap_compile(handle, &fp, filter_exp, 0, net);
   if (pcap_setfilter(handle, &fp) !=0) {
       pcap_perror(handle, "Error:");
       exit(EXIT_FAILURE);
   }
 
-  // Step 3: Capture packets
   pcap_loop(handle, -1, got_packet, NULL);
 
-  pcap_close(handle);   //Close the handle
+  pcap_close(handle);
   return 0;
 }
 
